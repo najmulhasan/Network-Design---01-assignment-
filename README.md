@@ -102,7 +102,7 @@ Canonical diagram file in this repository: `Real-Estate-Network-Diagram.png` (no
 
 ### Original Diagram (Reference)
 
-**Original Diagram File**: `Real-Estate-Network-Architecture-Page-1.drawio.png`
+**Original Diagram File** (moved to `diagrams/`): `diagrams/Real-Estate-Network-Architecture-Page-1.drawio.png`
 
 The previous diagram shows the conceptual architecture structure and can be referenced for the detailed component breakdown.
 
@@ -352,7 +352,7 @@ This repository contains the following deliverables:
 
 1. **README.md** - Complete documentation with architecture details, assumptions, detailed summary, and cost analysis
 2. **Real-Estate-Network-Diagram.png** - Enhanced visual network architecture diagram with all comprehensive components
-3. **Real-Estate-Network-Architecture-Page-1.drawio.png** - Original draw.io diagram for reference
+3. `diagrams/Real-Estate-Network-Architecture-Page-1.drawio.png` - Original draw.io diagram (moved to `diagrams/`)
 4. **Networking Documentation.pdf** - Comprehensive PDF documentation with expanded details
 5. **DIAGRAM-CREATION-GUIDE.md** - Step-by-step guide for diagram creation (reference material)
 6. **ASSIGNMENT-CHECKLIST.md** - Complete verification checklist
@@ -460,7 +460,7 @@ Network-Design---01-assignment/
 │   ├── Component Breakdown (5 detailed tables)
 │   └── Project Files & Resources
 ├── Real-Estate-Network-Diagram.png (Enhanced visual diagram)
-├── Real-Estate-Network-Architecture-Page-1.drawio.png (Original diagram)
+├── diagrams/Real-Estate-Network-Architecture-Page-1.drawio.png (Original diagram - archived)
 ├── Networking Documentation.pdf (Supplementary documentation)
 ├── ASSIGNMENT-CHECKLIST.md (Verification checklist)
 ├── DIAGRAM-CREATION-GUIDE.md (Reference guide)
