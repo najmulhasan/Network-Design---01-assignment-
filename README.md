@@ -403,8 +403,8 @@ All assignment requirements have been fulfilled:
 
 ### All Required Deliverables Included:
 
-#### ✅ 1. Network Architecture Diagram
-- **Location**: Embedded in README.md (Real-Estate-Network-Diagram.png)
+-#### ✅ 1. Network Architecture Diagram
+- **Location**: Embedded in `README.md` (`diagrams/Final-Network-Diagram.svg`)
 - **Design Tool**: draw.io (free online tool)
 - **Components**: 
   - Global layer (Route 53, CloudFront, WAF, API Gateway)
