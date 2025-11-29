@@ -166,46 +166,6 @@ The previous diagram shows the conceptual architecture structure and can be refe
 
 This comprehensive document includes expanded details on network design, security protocols, and operational procedures.
 
-### Diagram Highlights
-- Layout mirrors the requested draw.io style with top-level Internet/External/Developer stacks feeding two color-coded region blocks (US East primary and EU West secondary).
-- Each region shows twin Availability Zones with separate public, private app, and private DB subnets, making it easy to trace in-region redundancy paths.
-- Integration subnets (API Gateway, Lambda, EventBridge, SQS) sit beside the VPC boxes to illustrate how third-party feeds and payment gateways connect without exposing workloads.
-- Developer subnets appear alongside each region to show VPN bastion access, CI/CD runners, and staging environments in their own network tier.
-- A dedicated legend at the bottom maps each color (public/app/data/developer) so stakeholders can align the PDF/PNG with presentation slides immediately.
-
-### Visual Assets
-- **Live Mermaid source**: `Real-Estate-Network-Architecture.mmd`
-- **PDF export for submission**: `revised diagram.pdf`
-- **Assignment diagram PDF**: `diagram.pdf` (mirrored in-line above via `diagram.png`)
-- **Legacy PNG reference**: `Real-Estate-Network-Architecture-Page-1.drawio.png`
-- **README preview**: GitHub renders the Mermaid block above automatically.
-
-### Additional Documentation
-
-**Complete PDF Documentation**: `Networking Documentation.pdf`
-
-This comprehensive document includes expanded details on network design, security protocols, and operational procedures.
-
----
-
-## Updated Diagram & Documentation Bundle
-
-### Diagram
-- `Real-Estate-Network-Architecture.mmd` is the authoritative source and renders inline above.
-- `revised diagram.pdf` contains the exported deliverable requested in the assignment checklist.
-- `Real-Estate-Network-Architecture.png` is the high-resolution PNG embedded earlier in this README for bright, easy viewing.
-- `diagram.pdf` / `diagram.png` reproduce the classroom template exactly as requested for the final submission packet.
-- `Real-Estate-Network-Architecture-Page-1.drawio.png` remains for visual diffing against the previous iteration.
-
-### Documentation
-- `README.md` (this file) now summarizes architecture decisions, reasoning, networking components, and cost with the refreshed diagram context.
-- `Networking Documentation.pdf` dives deeper into subnet CIDRs, routing policies, IAM boundaries, DR drills, and operational runbooks.
-- `ASSIGNMENT-CHECKLIST.md` and `README-FINAL-SUMMARY.md` document compliance with each grading rubric item.
-
-### Cost
-- The cost estimation tables in the [Cost Estimation](#cost-estimation) section align with the updated topology, covering concurrent and monthly user scenarios plus a data-component breakdown.
-- Notes 1–10 underneath the tables describe optimization levers (Reserved Instances, Spot usage, CDN offload, multi-region trade-offs) to keep OpEx within acceptable ranges.
-
 ---
 
 ## Assumptions
