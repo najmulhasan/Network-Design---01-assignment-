@@ -34,29 +34,7 @@ Canonical diagram file in this repository: `diagrams/Final-Network-Diagram.svg` 
 
 ### Final Network Diagram
 
-The final, high-resolution network diagram for this assignment is embedded below. (Saved in the repository as `diagrams/Final-Network-Diagram.svg` — an SVG rendered from the source `.mmd` for the best clarity; PNG copies are also available.)
-
-<p align="center">
-  <img src="diagrams/Final-Network-Diagram.svg" alt="Final Network Diagram — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
-</p>
-
-*Figure: Final Network Diagram — multi-region, multi-AZ architecture.*  
-PNG fallback / download: [diagrams/Final-Network-Diagram.png](diagrams/Final-Network-Diagram.png)
-
-<p align="center">
-  <!-- PNG fallback displayed for environments that prefer raster images -->
-  <img src="diagrams/Final-Network-Diagram.png" alt="Final Network Diagram (PNG) — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
-</p>
-
-*Alternate: PNG version of the diagram (same content as the SVG).*  
-
-<p align="center">
-  <!-- Attached final diagram (root-level) -->
-  <img src="Final%20Network%20Diagram.png" alt="Attached Final Network Diagram" style="max-width:100%;height:auto;" />
-</p>
-
-*Attached: `Final Network Diagram.png` (same diagram as above).*  
-
+The final diagram files (SVG and PNG) are available in the repository under the `diagrams/` folder. Refer to `diagrams/Final-Network-Diagram.svg` for the high-quality, scalable source.
 **Diagram Components Overview:**
 
 #### Global Layer (Top)
