@@ -37,12 +37,12 @@ Canonical diagram file in this repository: `diagrams/Final-Network-Diagram.svg` 
 The final diagram files (SVG and PNG) are available in the repository under the `diagrams/` folder. Refer to `diagrams/Final-Network-Diagram.svg` for the high-quality, scalable source.
 
 <p align="center">
-  <img src="diagrams/Final-Network-Diagram.png" alt="Final Network Diagram — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
+  <img src="diagrams/Network-Diagram.png" alt="Network Diagram — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
 </p>
 
-*Figure: Attached final network diagram (PNG).*  
+*Figure: Network Diagram — multi-region, multi-AZ architecture.*  
 
-Download / alternate location: `diagrams/Final-Network-Diagram.png`
+Download / alternate location: `diagrams/Network-Diagram.png`
 **Diagram Components Overview:**
 
 #### Global Layer (Top)
