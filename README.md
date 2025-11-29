@@ -28,9 +28,18 @@ This document presents a comprehensive network architecture design for a global 
 
 The complete network architecture has been redesigned with comprehensive AWS architecture components showing all critical layers and services:
 
-**Enhanced Diagram File**: `Real-Estate-Network-Diagram.png`
+**Enhanced Diagram Files** (in repository):
 
-![Real Estate Network Diagram](Real-Estate-Network-Diagram.png)
+- `Real-Estate-Network-Diagram.png` (primary)
+- `Real-Estate-Network-Architecture.png` (alternative)
+- `Real Estate Network Diagram.png` (attachment - contains spaces)
+
+<!-- Embedding multiple diagram file options. GitHub will render the one with a valid source. -->
+![Real Estate Network Diagram - primary](Real-Estate-Network-Diagram.png)
+
+<!-- Fallbacks (some viewers may require URL-encoded filenames) -->
+![Real Estate Network Diagram - alt](Real-Estate-Network-Architecture.png)
+![Real Estate Network Diagram - attachment](Real%20Estate%20Network%20Diagram.png)
 
 **Diagram Components Overview:**
 
