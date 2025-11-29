@@ -36,7 +36,12 @@ Canonical diagram file in this repository: `diagrams/Final-Network-Diagram.svg` 
 
 The final, high-resolution network diagram for this assignment is embedded below. (Saved in the repository as `diagrams/Final-Network-Diagram.svg` — an SVG rendered from the source `.mmd` for the best clarity; PNG copies are also available.)
 
-![Final Network Diagram](diagrams/Final-Network-Diagram.svg)
+<p align="center">
+  <img src="diagrams/Final-Network-Diagram.svg" alt="Final Network Diagram — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
+</p>
+
+*Figure: Final Network Diagram — multi-region, multi-AZ architecture.*  
+PNG fallback / download: [diagrams/Final-Network-Diagram.png](diagrams/Final-Network-Diagram.png)
 
 **Diagram Components Overview:**
 
