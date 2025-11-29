@@ -24,81 +24,147 @@ This document presents a comprehensive network architecture design for a global 
 
 ## Network Architecture Diagram
 
-### Architecture Overview
+### Updated Comprehensive Network Architecture
 
-The updated diagram was created in the free [Mermaid Live Editor](https://mermaid.live/), saved as `Real-Estate-Network-Architecture.mmd`, and exported into `revised diagram.pdf` for the assignment handoff. It now emphasizes the global control plane, developer enclaves, observability stack, and the integration mesh that talks to dozens of marketplace feeds.
+The complete network architecture has been redesigned with comprehensive AWS architecture components showing all critical layers and services:
 
-```mermaid
-flowchart TB
-  subgraph Global_Access[Global Edge & Control Plane]
-    DNS[Route 53 + Cloudflare<br/>DNS · CDN · DDoS] --> CDN[CloudFront + WAF<br/>Edge Caching]
-    CDN --> GA[AWS Global Accelerator<br/>Latency Based Routing]
-    GA -->|Geo latency| GSLB[Global Load Layer]
-    S3_Global[S3 CRR<br/>Media · Docs · Static Assets] --> CDN
-    IAM[Organizations · IAM Identity Center] --> DEV_PORTAL[Developer Portal & VPN Auth]
-  end
+**Enhanced Diagram File**: `Real-Estate-Network-Diagram.png`
 
-  GSLB -->|us-east-1| ALB_R1
-  GSLB -->|eu-west-1| ALB_R2
+![Real Estate Network Diagram](Real-Estate-Network-Diagram.png)
 
-  subgraph Region1[Region 1 · us-east-1]
-    subgraph Public1[Public Subnets · AZ 1a/1b]
-      ALB_R1[ALB + Shield Advanced]
-      ALB_R1 --> Bastion1[Bastion · Client VPN Endpoint]
-      ALB_R1 --> NAT1[NAT + Egress Firewall]
-    end
-    subgraph App1[Application Subnets]
-      NAT1 --> ASG1[ECS/EC2 Auto Scaling<br/>Search · Bid · Chat · API]
-      ASG1 --> Cache1[ElastiCache Redis<br/>Sessions · Bid State]
-      ASG1 --> Search1[OpenSearch Domain<br/>Listings Index]
-      ASG1 --> Chat1[Managed WebSocket Layer<br/>Chat & Notifications]
-    end
-    subgraph Data1[Data & Integration Subnets]
-      ASG1 --> RDS1[RDS PostgreSQL Multi-AZ<br/>Users · Listings · Payments]
-      ASG1 --> DW1[Analytics Cluster + Lakehouse]
-      INT1[Integration Mesh<br/>API Gateway · Lambda · EventBridge · SQS] --> ThirdParty
-      ThirdParty[3rd-Party Providers<br/>MLS · Payments · KYC · Maps]
-    end
-    subgraph Dev1[Developer Subnets]
-      DEV_PORTAL --> DevEnv1[CI/CD · Git · Test Beds]
-      DevEnv1 --> ASG1
-    end
-    Mon1[Observability Stack<br/>CloudWatch · X-Ray · Grafana · GuardDuty] --> ASG1
-    Mon1 --> RDS1
-  end
+**Diagram Components Overview:**
 
-  subgraph Region2[Region 2 · eu-west-1]
-    subgraph Public2[Public Subnets · AZ 2a/2b]
-      ALB_R2[ALB + Shield Advanced]
-      ALB_R2 --> Bastion2[Bastion · Client VPN Endpoint]
-      ALB_R2 --> NAT2[NAT + Egress Firewall]
-    end
-    subgraph App2[Application Subnets]
-      NAT2 --> ASG2[ECS/EC2 Auto Scaling<br/>Regional Services + Chat Edge]
-      ASG2 --> Cache2[Redis Cluster]
-      ASG2 --> Search2[OpenSearch Read Replica]
-    end
-    subgraph Data2[Data & Integration Subnets]
-      ASG2 --> RDS2[RDS Cross-Region Replica<br/>Read + DR]
-      INT2[Integration Mesh<br/>Lambda · API GW · EventBridge] --> ThirdParty
-    end
-    subgraph Dev2[Developer Subnets]
-      DEV_PORTAL --> DevEnv2[EU Dev/Test Enclave]
-      DevEnv2 --> ASG2
-    end
-    Mon2[Observability Stack] --> ASG2
-  end
+#### Global Layer (Top)
+- **Route 53**: DNS and routing with geo-failover capabilities
+- **CloudFront**: Global CDN for static content distribution
+- **WAF**: Web Application Firewall for DDoS and attack protection
+- **API Gateway**: API management and throttling
 
-  RDS1 ==Async Replication==> RDS2
-  Search1 ==CCR==> Search2
-  S3_Global ==Replication==> S3_Global
-  Mon1 -.-> SOC[SOC/SIEM]
-  Mon2 -.-> SOC
-```
+#### Region 1 (US-EAST-1) - 2 Availability Zones
 
-![Updated Network Diagram](Real-Estate-Network-Architecture.png)
+**AZ-1a and AZ-1b contain:**
+- **Public Subnet (10.0.1.0/24 & 10.0.11.0/24)**
+  - NAT Gateway for outbound internet access
+  - Internet Gateway for inbound traffic
+  - ALB for load balancing
 
-![Assignment Diagram (PDF Export Preview)](diagram.png)
+- **Private Subnet - Application Tier (10.0.2.0/24 & 10.0.12.0/24)**
+  - Web Tier (ECS/EKS)
+  - App Tier (ECS/EKS)
+  - Updating Service
+
+- **Data Tier Subnet (10.0.3.0/24 & 10.0.13.0/24)**
+  - RDS Primary Database
+  - ElastiCache for session management
+  - OpenSearch for full-text search
+
+**Shared Services:**
+- S3 Bucket for static assets and backups
+- DynamoDB for Lambda state
+- CloudWatch for monitoring and logging
+- VPN Tunnel to Dev VPC
+
+#### Region 2 (EU-WEST-1) - 2 Availability Zones
+
+**AZ-2a and AZ-2b contain:**
+- **Public Subnets (10.1.1.0/24 & 10.1.11.0/24)**
+  - NAT Gateway and Internet Gateway
+  - ALB for European users
+
+- **Private Subnets - Application Tier (10.1.2.0/24 & 10.1.12.0/24)**
+  - Web Tier and App Tier services
+  - Updating Service
+
+- **Data Tier Subnets (10.1.3.0/24 & 10.1.13.0/24)**
+  - RDS Read Replicas (standby)
+  - ElastiCache replicas
+  - OpenSearch replicas
+
+**Shared Services:**
+- Same as Region 1
+- VPN Tunnel to Dev VPC
+
+#### Inter-Region Connectivity
+- **VPC Peering**: Direct connection between regions
+- **Cross-Region Replication**: S3 data replication
+- **Database Replication**: RDS read replicas
+- **SNS/SQS**: Cross-region messaging
+
+#### Legend
+- **Green Subnets**: Public Subnets (internet-facing)
+- **Blue Subnets**: Private Application Subnets
+- **Orange Subnets**: Data Tier Subnets
+- **Yellow Section**: Shared services
+
+---
+
+### Original Diagram (Reference)
+
+**Original Diagram File**: `Real-Estate-Network-Architecture-Page-1.drawio.png`
+
+The previous diagram shows the conceptual architecture structure and can be referenced for the detailed component breakdown.
+
+---
+
+### Detailed Component Breakdown
+
+#### Global Layer Components
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| Route 53 | DNS & Geo-routing | Health checks, failover, geo-latency routing |
+| CloudFront | CDN | 400+ edge locations, caching, compression |
+| WAF | Web Application Firewall | Rate limiting, bot protection, SQL injection prevention |
+| API Gateway | API Management | Request throttling, API versioning, authentication |
+
+#### Region 1 & 2 - Compute & Application Layer
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| ALB | Load Balancer | SSL/TLS termination, path-based routing |
+| NAT Gateway | Egress Firewall | Outbound internet access for private subnets |
+| ASG (Auto Scaling) | Compute Scaling | Dynamic scaling based on CPU/memory metrics |
+| ECS/EKS | Container Orchestration | Microservices for search, bid, chat |
+| Chat Service | Real-time Messaging | WebSocket connections, presence, notifications |
+
+#### Region 1 & 2 - Data Layer
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| RDS (Primary/Replica) | Relational Database | PostgreSQL Multi-AZ, automated backups |
+| ElastiCache (Redis) | Caching Layer | Session management, bid state, rate limiting |
+| OpenSearch | Full-text Search | Property listing search, filtering |
+| S3 Bucket | Object Storage | Property images, documents, backups |
+
+#### Integration & External Services
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| Lambda Functions | Serverless Compute | 3rd-party API integration, data transformation |
+| EventBridge | Event Router | Triggers Lambda from various sources |
+| SQS/SNS | Message Queues | Async processing, fan-out notifications |
+| API Gateway | 3rd-party Integration | Rate limiting, caching of external data |
+
+#### Monitoring & Security
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| CloudWatch | Monitoring | Metrics, logs, alarms, dashboards |
+| X-Ray | Distributed Tracing | Request tracing across services |
+| GuardDuty | Threat Detection | Anomaly detection, security findings |
+| VPC Flow Logs | Network Monitoring | Traffic analysis, security investigations |
+| AWS WAF | Attack Prevention | Layer 7 protection, rule-based filtering |
+
+#### Developer Environment
+| Component | Purpose | Details |
+|-----------|---------|---------|
+| VPN Gateway | Secure Access | VPN tunnel for developer access |
+| VPC for Dev | Isolated Environment | Separate VPC for development work |
+| CI/CD Pipeline | Automation | Git integration, testing, deployment |
+| CodePipeline | Pipeline Management | Automated deployments to staging/production |
+
+---
+
+### Additional Documentation
+
+**Complete PDF Documentation**: `Networking Documentation.pdf`
+
+This comprehensive document includes expanded details on network design, security protocols, and operational procedures.
 
 ### Diagram Highlights
 - Layout mirrors the requested draw.io style with top-level Internet/External/Developer stacks feeding two color-coded region blocks (US East primary and EU West secondary).
@@ -323,16 +389,22 @@ The following table provides estimated monthly costs for different user loads ac
 This repository contains the following deliverables:
 
 1. **README.md** - Complete documentation with architecture details, assumptions, detailed summary, and cost analysis
-2. **Real-Estate-Network-Architecture-Page-1.drawio.png** - Visual network architecture diagram created with draw.io
-3. **Networking Documentation.pdf** - Comprehensive PDF documentation with expanded details
-4. **DIAGRAM-CREATION-GUIDE.md** - Step-by-step guide for diagram creation (reference material)
+2. **Real-Estate-Network-Diagram.png** - Enhanced visual network architecture diagram with all comprehensive components
+3. **Real-Estate-Network-Architecture-Page-1.drawio.png** - Original draw.io diagram for reference
+4. **Networking Documentation.pdf** - Comprehensive PDF documentation with expanded details
+5. **DIAGRAM-CREATION-GUIDE.md** - Step-by-step guide for diagram creation (reference material)
+6. **ASSIGNMENT-CHECKLIST.md** - Complete verification checklist
+7. **GITHUB-SUBMISSION-GUIDE.md** - Instructions for GitHub submission
+8. **README-FINAL-SUMMARY.md** - Final summary document
 
 All assignment requirements have been fulfilled:
-- ✅ Network architecture diagram designed using draw.io
+- ✅ Enhanced network architecture diagram with all components
 - ✅ Comprehensive list of assumptions documented
 - ✅ Detailed 200-500 word summary with 4 required sections
 - ✅ Complete cost estimation tables for various user loads
 - ✅ Multi-region, multi-AZ architecture supporting development team access
+- ✅ Global layer with Route 53, CloudFront, WAF, API Gateway
+- ✅ All missing components now included
 
 ---
 
