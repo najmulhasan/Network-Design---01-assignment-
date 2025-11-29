@@ -30,9 +30,13 @@ The complete network architecture has been redesigned with comprehensive AWS arc
 
 **Diagram**
 
-Canonical diagram file in this repository: `Real-Estate-Network-Diagram.png` (no spaces).
+Canonical diagram file in this repository: `diagrams/Real-Estate-Network-Architecture.png` (high-quality, no spaces).
 
-![Real Estate Network Diagram](Real-Estate-Network-Diagram.png)
+### Final Network Diagram
+
+The final, high-resolution network diagram for this assignment is embedded below. (Saved in the repository as `diagrams/Real-Estate-Network-Architecture.png`; you can download and rename it to `Network-Diagram.png` if you need that exact filename.)
+
+![Final Network Diagram](diagrams/Real-Estate-Network-Architecture.png)
 
 **Diagram Components Overview:**
 
@@ -351,8 +355,8 @@ The following table provides estimated monthly costs for different user loads ac
 This repository contains the following deliverables:
 
 1. **README.md** - Complete documentation with architecture details, assumptions, detailed summary, and cost analysis
-2. **Real-Estate-Network-Diagram.png** - Enhanced visual network architecture diagram with all comprehensive components
-3. `diagrams/Real-Estate-Network-Architecture-Page-1.drawio.png` - Original draw.io diagram (moved to `diagrams/`)
+2. `diagrams/Real-Estate-Network-Architecture.png` - High-quality visual network architecture diagram (canonical)
+3. `diagrams/Real-Estate-Network-Architecture-Page-1.drawio.png` - Original draw.io diagram (archived in `diagrams/`)
 4. **Networking Documentation.pdf** - Comprehensive PDF documentation with expanded details
 5. **DIAGRAM-CREATION-GUIDE.md** - Step-by-step guide for diagram creation (reference material)
 6. **ASSIGNMENT-CHECKLIST.md** - Complete verification checklist
