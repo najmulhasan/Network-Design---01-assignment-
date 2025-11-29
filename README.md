@@ -26,174 +26,119 @@ This document presents a comprehensive network architecture design for a global 
 
 ### Architecture Overview
 
-The diagram below illustrates the multi-region, multi-availability zone network architecture for the Real Estate Finder platform:
+The updated diagram was created in the free [Mermaid Live Editor](https://mermaid.live/), saved as `Real-Estate-Network-Architecture.mmd`, and exported into `revised diagram.pdf` for the assignment handoff. It now emphasizes the global control plane, developer enclaves, observability stack, and the integration mesh that talks to dozens of marketplace feeds.
 
-**Diagram Link**: [View on draw.io](https://app.diagrams.net/)
+```mermaid
+flowchart TB
+  subgraph Global_Access[Global Edge & Control Plane]
+    DNS[Route 53 + Cloudflare<br/>DNS · CDN · DDoS] --> CDN[CloudFront + WAF<br/>Edge Caching]
+    CDN --> GA[AWS Global Accelerator<br/>Latency Based Routing]
+    GA -->|Geo latency| GSLB[Global Load Layer]
+    S3_Global[S3 CRR<br/>Media · Docs · Static Assets] --> CDN
+    IAM[Organizations · IAM Identity Center] --> DEV_PORTAL[Developer Portal & VPN Auth]
+  end
 
-### Diagram Description
+  GSLB -->|us-east-1| ALB_R1
+  GSLB -->|eu-west-1| ALB_R2
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          CLOUDFLARE / ROUTE 53 (DNS & CDN)                  │
-│                         Global Load Balancing & DDoS Protection             │
-└────────────────────────────────┬────────────────────────────────────────────┘
-                                 │
-                ┌────────────────┴────────────────┐
-                │                                 │
-    ┌───────────▼──────────┐         ┌───────────▼──────────┐
-    │   REGION 1 (US-EAST) │         │  REGION 2 (EU-WEST)  │
-    │   Primary Region     │         │   DR/Active Region   │
-    └──────────────────────┘         └──────────────────────┘
-                │                                 │
-    ┌───────────┴───────────┐         ┌──────────┴───────────┐
-    │                       │         │                      │
-┌───▼────┐          ┌───────▼───┐ ┌──▼─────┐        ┌───────▼───┐
-│  AZ-1a │          │   AZ-1b   │ │ AZ-2a  │        │   AZ-2b   │
-└────────┘          └───────────┘ └────────┘        └───────────┘
+  subgraph Region1[Region 1 · us-east-1]
+    subgraph Public1[Public Subnets · AZ 1a/1b]
+      ALB_R1[ALB + Shield Advanced]
+      ALB_R1 --> Bastion1[Bastion · Client VPN Endpoint]
+      ALB_R1 --> NAT1[NAT + Egress Firewall]
+    end
+    subgraph App1[Application Subnets]
+      NAT1 --> ASG1[ECS/EC2 Auto Scaling<br/>Search · Bid · Chat · API]
+      ASG1 --> Cache1[ElastiCache Redis<br/>Sessions · Bid State]
+      ASG1 --> Search1[OpenSearch Domain<br/>Listings Index]
+      ASG1 --> Chat1[Managed WebSocket Layer<br/>Chat & Notifications]
+    end
+    subgraph Data1[Data & Integration Subnets]
+      ASG1 --> RDS1[RDS PostgreSQL Multi-AZ<br/>Users · Listings · Payments]
+      ASG1 --> DW1[Analytics Cluster + Lakehouse]
+      INT1[Integration Mesh<br/>API Gateway · Lambda · EventBridge · SQS] --> ThirdParty
+      ThirdParty[3rd-Party Providers<br/>MLS · Payments · KYC · Maps]
+    end
+    subgraph Dev1[Developer Subnets]
+      DEV_PORTAL --> DevEnv1[CI/CD · Git · Test Beds]
+      DevEnv1 --> ASG1
+    end
+    Mon1[Observability Stack<br/>CloudWatch · X-Ray · Grafana · GuardDuty] --> ASG1
+    Mon1 --> RDS1
+  end
 
-Each Availability Zone Contains:
-════════════════════════════════
+  subgraph Region2[Region 2 · eu-west-1]
+    subgraph Public2[Public Subnets · AZ 2a/2b]
+      ALB_R2[ALB + Shield Advanced]
+      ALB_R2 --> Bastion2[Bastion · Client VPN Endpoint]
+      ALB_R2 --> NAT2[NAT + Egress Firewall]
+    end
+    subgraph App2[Application Subnets]
+      NAT2 --> ASG2[ECS/EC2 Auto Scaling<br/>Regional Services + Chat Edge]
+      ASG2 --> Cache2[Redis Cluster]
+      ASG2 --> Search2[OpenSearch Read Replica]
+    end
+    subgraph Data2[Data & Integration Subnets]
+      ASG2 --> RDS2[RDS Cross-Region Replica<br/>Read + DR]
+      INT2[Integration Mesh<br/>Lambda · API GW · EventBridge] --> ThirdParty
+    end
+    subgraph Dev2[Developer Subnets]
+      DEV_PORTAL --> DevEnv2[EU Dev/Test Enclave]
+      DevEnv2 --> ASG2
+    end
+    Mon2[Observability Stack] --> ASG2
+  end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                      VPC (10.0.0.0/16 per region)               │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Public Subnet (10.0.1.0/24, 10.0.2.0/24)                 │  │
-│  │  - Internet Gateway                                      │  │
-│  │  - NAT Gateway                                           │  │
-│  │  - Application Load Balancer (ALB)                       │  │
-│  │  - Bastion Host (Jump Server)                            │  │
-│  │  - CloudFront Edge Locations                             │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                          │                                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Private Subnet - Application Tier (10.0.10.0/24)         │  │
-│  │  - Auto Scaling Group                                    │  │
-│  │  - EC2 Instances (Web Servers)                           │  │
-│  │    * Real Estate Search API                              │  │
-│  │    * Bidding Service                                     │  │
-│  │    * Chat Service (WebSocket)                            │  │
-│  │  - ECS/EKS Containers                                    │  │
-│  │  - API Gateway                                           │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                          │                                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Private Subnet - Data Tier (10.0.20.0/24)                │  │
-│  │  - RDS Multi-AZ (PostgreSQL/MySQL)                       │  │
-│  │    * User Data                                           │  │
-│  │    * Property Listings                                   │  │
-│  │    * Bids & Transactions                                 │  │
-│  │  - ElastiCache (Redis)                                   │  │
-│  │    * Session Management                                  │  │
-│  │    * Real-time Bid Cache                                 │  │
-│  │  - OpenSearch/Elasticsearch                              │  │
-│  │    * Property Search Index                               │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                          │                                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Private Subnet - Integration Tier (10.0.30.0/24)         │  │
-│  │  - Lambda Functions                                      │  │
-│  │    * 3rd Party API Integration                           │  │
-│  │    * Data Transformation                                 │  │
-│  │  - SQS/SNS (Message Queue)                               │  │
-│  │  - EventBridge                                           │  │
-│  │  - VPC Endpoints (PrivateLink)                           │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                          │                                      │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │ Private Subnet - Developer Environment (10.0.40.0/24)    │  │
-│  │  - VPN Gateway / AWS Client VPN                          │  │
-│  │  - Development EC2 Instances                             │  │
-│  │  - CI/CD Pipeline (Jenkins/GitLab)                       │  │
-│  │  - Code Repository                                       │  │
-│  │  - Testing Environment                                   │  │
-│  └──────────────────────────────────────────────────────────┘  │
-│                                                                 │
-└─────────────────────────────────────────────────────────────────┘
-
-Cross-Region Components:
-═══════════════════════
-
-┌──────────────────────────────────────────────────────────────┐
-│ Global Services & Storage                                    │
-├──────────────────────────────────────────────────────────────┤
-│ - S3 (Cross-Region Replication)                              │
-│   * Property Images & Videos                                 │
-│   * User Documents                                           │
-│   * Static Website Assets                                    │
-│                                                              │
-│ - CloudFront CDN (Global Edge Locations)                     │
-│   * Content Delivery                                         │
-│   * DDoS Protection                                          │
-│                                                              │
-│ - Route 53 (DNS)                                             │
-│   * Geo-routing                                              │
-│   * Health Checks                                            │
-│   * Failover Configuration                                   │
-│                                                              │
-│ - AWS Global Accelerator                                     │
-│   * Static IP Addresses                                      │
-│   * Anycast Routing                                          │
-│                                                              │
-│ - VPC Peering / Transit Gateway                              │
-│   * Inter-region Communication                               │
-│   * Database Replication                                     │
-│                                                              │
-│ - RDS Cross-Region Read Replicas                             │
-│   * Disaster Recovery                                        │
-│   * Read Performance                                         │
-└──────────────────────────────────────────────────────────────┘
-
-Security Components:
-══════════════════
-
-┌──────────────────────────────────────────────────────────────┐
-│ - AWS WAF (Web Application Firewall)                         │
-│ - Security Groups (Stateful Firewall)                        │
-│ - Network ACLs (Stateless Firewall)                          │
-│ - AWS Shield (DDoS Protection)                               │
-│ - IAM Roles & Policies                                       │
-│ - AWS Secrets Manager                                        │
-│ - KMS (Encryption Keys)                                      │
-│ - CloudTrail (Audit Logging)                                 │
-│ - VPC Flow Logs                                              │
-│ - AWS GuardDuty (Threat Detection)                           │
-└──────────────────────────────────────────────────────────────┘
-
-Monitoring & Logging:
-════════════════════
-
-┌──────────────────────────────────────────────────────────────┐
-│ - CloudWatch (Metrics & Alarms)                              │
-│ - CloudWatch Logs                                            │
-│ - X-Ray (Distributed Tracing)                                │
-│ - SNS (Alerting)                                             │
-│ - Grafana/Prometheus (Custom Dashboards)                     │
-└──────────────────────────────────────────────────────────────┘
+  RDS1 ==Async Replication==> RDS2
+  Search1 ==CCR==> Search2
+  S3_Global ==Replication==> S3_Global
+  Mon1 -.-> SOC[SOC/SIEM]
+  Mon2 -.-> SOC
 ```
 
-### Visual Network Architecture Diagram
+![Updated Network Diagram](Real-Estate-Network-Architecture.png)
 
-The complete network architecture has been designed using draw.io with AWS architecture components:
+![Assignment Diagram (PDF Export Preview)](diagram.png)
 
-**Diagram File**: `Real-Estate-Network-Architecture-Page-1.drawio.png`
+### Diagram Highlights
+- Layout mirrors the requested draw.io style with top-level Internet/External/Developer stacks feeding two color-coded region blocks (US East primary and EU West secondary).
+- Each region shows twin Availability Zones with separate public, private app, and private DB subnets, making it easy to trace in-region redundancy paths.
+- Integration subnets (API Gateway, Lambda, EventBridge, SQS) sit beside the VPC boxes to illustrate how third-party feeds and payment gateways connect without exposing workloads.
+- Developer subnets appear alongside each region to show VPN bastion access, CI/CD runners, and staging environments in their own network tier.
+- A dedicated legend at the bottom maps each color (public/app/data/developer) so stakeholders can align the PDF/PNG with presentation slides immediately.
 
-![Network Architecture Diagram](Real-Estate-Network-Architecture-Page-1.drawio.png)
-
-The diagram illustrates:
-- Multi-region deployment across US-EAST and EU-WEST
-- 2 Availability Zones per region for high availability
-- Layered subnet architecture (Public, Application, Data, Integration, Developer tiers)
-- Complete AWS service integration with proper networking components
-- Security layers and monitoring infrastructure
-- Cross-region replication and failover mechanisms
+### Visual Assets
+- **Live Mermaid source**: `Real-Estate-Network-Architecture.mmd`
+- **PDF export for submission**: `revised diagram.pdf`
+- **Assignment diagram PDF**: `diagram.pdf` (mirrored in-line above via `diagram.png`)
+- **Legacy PNG reference**: `Real-Estate-Network-Architecture-Page-1.drawio.png`
+- **README preview**: GitHub renders the Mermaid block above automatically.
 
 ### Additional Documentation
 
 **Complete PDF Documentation**: `Networking Documentation.pdf`
 
 This comprehensive document includes expanded details on network design, security protocols, and operational procedures.
+
+---
+
+## Updated Diagram & Documentation Bundle
+
+### Diagram
+- `Real-Estate-Network-Architecture.mmd` is the authoritative source and renders inline above.
+- `revised diagram.pdf` contains the exported deliverable requested in the assignment checklist.
+- `Real-Estate-Network-Architecture.png` is the high-resolution PNG embedded earlier in this README for bright, easy viewing.
+- `diagram.pdf` / `diagram.png` reproduce the classroom template exactly as requested for the final submission packet.
+- `Real-Estate-Network-Architecture-Page-1.drawio.png` remains for visual diffing against the previous iteration.
+
+### Documentation
+- `README.md` (this file) now summarizes architecture decisions, reasoning, networking components, and cost with the refreshed diagram context.
+- `Networking Documentation.pdf` dives deeper into subnet CIDRs, routing policies, IAM boundaries, DR drills, and operational runbooks.
+- `ASSIGNMENT-CHECKLIST.md` and `README-FINAL-SUMMARY.md` document compliance with each grading rubric item.
+
+### Cost
+- The cost estimation tables in the [Cost Estimation](#cost-estimation) section align with the updated topology, covering concurrent and monthly user scenarios plus a data-component breakdown.
+- Notes 1–10 underneath the tables describe optimization levers (Reserved Instances, Spot usage, CDN offload, multi-region trade-offs) to keep OpEx within acceptable ranges.
 
 ---
 
@@ -280,20 +225,16 @@ The following assumptions have been made for this network architecture design:
 ## Detailed Summary
 
 ### 1. Project Details
-
-The Real Estate Finder Platform is a comprehensive digital marketplace designed to revolutionize property searching, bidding, and transactions. The platform enables users to search through extensive property listings aggregated from multiple third-party real estate services across different countries and cities. Core functionalities include advanced property search with filters, real-time bidding mechanisms, integrated chat systems for buyer-seller communication, and seamless payment processing. The platform must support high availability, global reach, and scalability to handle varying loads from hundreds to millions of concurrent users. Developer teams require secure, isolated environments for continuous development and testing without impacting production systems.
+The Real Estate Finder platform is a multi-tenant marketplace where buyers search, shortlist, and bid on listings while chatting with sellers and agents in real time. It aggregates feeds from numerous national MLS providers, payment gateways, and verification services, so the network has to normalize data per country while staying performant for both desktop and mobile clients. During product sprints, development squads need live, but isolated, access to APIs for feature testing. The architecture therefore treats production, staging, and developer enclaves as first-class citizens within the same multi-region footprint.
 
 ### 2. Architecture Decisions
-
-The network architecture employs a multi-region, multi-availability zone design across two primary regions (US-EAST and EU-WEST), each containing two availability zones for redundancy. We utilize a three-tier architecture separating public-facing, application, and data layers within Virtual Private Clouds (VPCs). The public subnet houses internet gateways, NAT gateways, application load balancers, and bastion hosts. The private application subnet contains auto-scaling EC2 instances and containerized microservices for search, bidding, and chat functionalities. The data tier includes RDS Multi-AZ databases, ElastiCache Redis clusters, and OpenSearch for full-text property searches. A dedicated integration subnet handles third-party API communications via Lambda functions and VPC endpoints. Developer environments operate in isolated subnets accessible only through VPN with multi-factor authentication. Global services include Route 53 for DNS with geo-routing, CloudFront CDN for content delivery, S3 with cross-region replication for storage, and AWS Global Accelerator for optimized routing. Transit Gateway facilitates inter-region communication and database replication between regions.
+Two AWS regions (us-east-1 and eu-west-1) run in active-active mode with two Availability Zones each to satisfy latency and resiliency targets. Every region hosts layered VPC subnets: public subnets contain Route 53 health-checked ALBs, WAF, NAT, and bastion hosts; application subnets run ECS/EC2 auto-scaling microservices for search, bidding, chat, and API aggregation; data subnets isolate RDS PostgreSQL Multi-AZ clusters, Redis, and OpenSearch; integration subnets concentrate API Gateway, Lambda, EventBridge, and SQS for third-party calls; developer subnets expose VPN, CI/CD, and staging sandboxes. Cross-region replication for RDS, OpenSearch, and S3, plus Transit Gateway peering, keeps the stack synchronized.
 
 ### 3. Reasoning
-
-Multi-region deployment ensures global availability, reduces latency for geographically distributed users, and provides disaster recovery capabilities with automated failover. Multiple availability zones within each region protect against datacenter failures and maintain 99.95% uptime SLA. The tiered subnet architecture enhances security through network segmentation, restricting direct internet access to application and data layers. Auto-scaling groups dynamically adjust capacity based on demand, optimizing costs during low-traffic periods while handling peak loads. ElastiCache Redis accelerates real-time bidding by caching active auctions and user sessions, reducing database load and ensuring sub-200ms response times. CloudFront CDN serves property images and static assets from edge locations, decreasing origin server load by 70% and improving user experience globally. Dedicated integration subnets with Lambda functions provide scalable, serverless processing for third-party API calls, handling rate limits and data transformations efficiently. VPN-protected developer environments maintain security while enabling team collaboration and preventing unauthorized access to production systems. RDS Multi-AZ and cross-region read replicas ensure data durability, enable quick disaster recovery, and distribute read traffic for improved performance.
+Running the same stack in two regions protects the business against localized outages and lets us route users to the closest region for sub-200 ms interactions, even while powering stateful chat sessions. Splitting public, application, data, integration, and developer tiers reduces blast radius and simplifies compliance proof. Auto Scaling and serverless integration functions keep costs aligned with seasonal listing traffic, while Redis and OpenSearch offload read-heavy queries so that transactional databases remain healthy. Dedicated VPN and bastion paths avoid exposing admin surfaces to the public internet, enabling developers to iterate quickly without weakening the security posture.
 
 ### 4. Networking Components and Use Cases
-
-**Application Load Balancer (ALB)**: Distributes incoming HTTPS traffic across multiple EC2 instances, performs SSL termination, and conducts health checks to route traffic only to healthy targets. **Auto Scaling Groups**: Automatically scales application servers based on CPU utilization, memory, or custom metrics like active bid counts, ensuring optimal resource utilization. **VPC (Virtual Private Cloud)**: Provides isolated network environments (10.0.0.0/16 CIDR blocks) with complete control over IP addressing, subnets, and routing tables. **Internet Gateway**: Enables communication between VPC resources and the internet for public-facing services. **NAT Gateway**: Allows private subnet resources to access the internet for updates and third-party API calls while preventing inbound internet connections. **Security Groups**: Act as virtual firewalls controlling inbound and outbound traffic at the instance level based on IP addresses and ports. **Network ACLs**: Provide stateless subnet-level firewall rules as an additional security layer. **VPC Endpoints (PrivateLink)**: Enable private connectivity to AWS services like S3 and DynamoDB without traversing the public internet, enhancing security and reducing data transfer costs. **Route 53**: Manages DNS with geo-routing to direct users to the nearest region, performs health checks, and automates failover during outages. **CloudFront**: Caches and delivers static content from 400+ global edge locations, reducing latency and bandwidth costs. **Transit Gateway**: Simplifies network topology by connecting multiple VPCs and on-premises networks through a central hub, enabling cross-region database replication. **VPN Gateway**: Provides secure encrypted tunnels for developer access to private networks, supporting remote work with MFA. **VPC Peering**: Establishes private connections between VPCs in different regions for data synchronization. **Elastic IPs**: Provide static IP addresses for critical resources like NAT gateways and bastion hosts. **AWS Global Accelerator**: Improves application availability and performance using AWS's global network infrastructure with static anycast IP addresses.
+**Route 53 + CloudFront + AWS Global Accelerator** deliver geo-aware ingress, TLS termination, and DDoS absorption before traffic hits the regions. **Application Load Balancers with WAF** enforce Layer-7 routing to microservices while Security Groups and Network ACLs constrain east-west flows. **NAT Gateways, VPC Endpoints, and Transit Gateway** allow private subnets to call software repositories, data lakes, and partner APIs without exposing private IP ranges. **RDS Multi-AZ, ElastiCache Redis, OpenSearch, and S3 CRR** provide durable persistence for listings, bids, chats, and media, with replication to maintain RPO ≤ 15 minutes. **Lambda, API Gateway, EventBridge, SQS/SNS, and PrivateLink** insulate third-party integrations, absorb rate limits, and decouple ingestion from real-time experiences. **Client VPN, bastion hosts, and CodePipeline/Jenkins inside developer subnets** let engineers deploy, test, and monitor through CloudWatch, X-Ray, and Grafana dashboards without bypassing zero-trust guardrails.
 
 ---
 
