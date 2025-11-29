@@ -50,6 +50,13 @@ PNG fallback / download: [diagrams/Final-Network-Diagram.png](diagrams/Final-Net
 
 *Alternate: PNG version of the diagram (same content as the SVG).*  
 
+<p align="center">
+  <!-- Attached final diagram (root-level) -->
+  <img src="Final%20Network%20Diagram.png" alt="Attached Final Network Diagram" style="max-width:100%;height:auto;" />
+</p>
+
+*Attached: `Final Network Diagram.png` (same diagram as above).*  
+
 **Diagram Components Overview:**
 
 #### Global Layer (Top)
