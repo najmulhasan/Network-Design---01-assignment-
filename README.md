@@ -43,6 +43,13 @@ The final, high-resolution network diagram for this assignment is embedded below
 *Figure: Final Network Diagram — multi-region, multi-AZ architecture.*  
 PNG fallback / download: [diagrams/Final-Network-Diagram.png](diagrams/Final-Network-Diagram.png)
 
+<p align="center">
+  <!-- PNG fallback displayed for environments that prefer raster images -->
+  <img src="diagrams/Final-Network-Diagram.png" alt="Final Network Diagram (PNG) — multi-region, multi-AZ architecture" style="max-width:100%;height:auto;" />
+</p>
+
+*Alternate: PNG version of the diagram (same content as the SVG).*  
+
 **Diagram Components Overview:**
 
 #### Global Layer (Top)
